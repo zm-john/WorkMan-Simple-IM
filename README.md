@@ -5,7 +5,7 @@ Use WorkMan to build a simple IM system
 ```bash
 php test.php start
 ```
-## 测试方法，将WebSocket.js的内容复制到浏览器的conlose命令执行
+## 测试方法，将WebSocket.js的内容复制到浏览器的consloe命令执行
 例：
 ```javascript
 
