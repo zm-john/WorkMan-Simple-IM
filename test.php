@@ -16,10 +16,10 @@ $worker->count = 1;
 $worker->uidConnections = [];
 
 // 连接事件
-// $worker->onConnection = function ($connection) use ($worker)
-// {
-    
-// };
+$worker->onConnect = function ($connection)
+{
+    $connection->name = '';
+};
 
 // 用户离线事件
 $worker->onClose = function ($connection) use ($worker) {
@@ -42,6 +42,7 @@ $worker->onMessage = function($connection, $data) use ($worker)
 {
     $message = json_decode($data, true);
     if ($message) {
+        //------------  注册  -------------//
         if (isset($message['id'])) {
             if (!array_key_exists($message['id'], $worker->uidConnections)) {
                 // 发送当前已注册的用户ID
@@ -64,21 +65,30 @@ $worker->onMessage = function($connection, $data) use ($worker)
             }
         }
 
-        if (isset($message['to'])) {
-            if (isset($worker->uidConnections[$message['to']])) {
-                if ($message['to'] != $message['id']) {
-                    echo "{$message['id']} 发送消息给 {$message['to']}\n";
-                    // 向对方发送消息
-                    $reply = [
-                        'from'    => $message['id'],
-                        'message' => $message['message'],
-                        'type'    => TYPE_1 //普通消息
-                    ];
-                    $replyStr = json_encode($reply);
-                    $worker->uidConnections[$message['to']]->send($replyStr);
+        //----------  发送消息  -----------//
+        if (isset($message['message'])) {
+            if (isset($message['to'])) { // 单发消息
+                if (isset($worker->uidConnections[$message['to']])) { // 判断接收方用户是否在线
+                    if ($message['to'] != $connection->name) { // 不能给自己发消息
+                        echo "{$connection->name} 发送消息给 {$message['to']}：{$message['message']}\n";
+                        // 向对方发送消息
+                        $reply = [
+                            'from'    => $connection->name,
+                            'message' => $message['message'],
+                            'type'    => TYPE_1 //普通消息
+                        ];
+                        $replyStr = json_encode($reply);
+                        $worker->uidConnections[$message['to']]->send($replyStr);
+                    }
+                } else { // 未找到用户提示
+                    $connection->send(json_encode(['type' => TYPE_3, 'message' => 'ID：'.$message['to'].' 不存在或已下线！']));
                 }
-            } else {
-                $connection->send(json_encode(['type' => TYPE_3, 'message' => 'ID：'.$message['to'].' 不存在或已下线！']));
+            } // 群发消息
+            else if ($connection->name) {
+                foreach ($worker->uidConnections as $key => $otherConnection) {
+                    $otherConnection->send(json_encode(['type' => TYPE_3, 'message' => $connection->name . ":" . $message['message']]));
+                }
+                echo $connection->name , "群发消息：{$message['message']}\n";
             }
         }
     }
