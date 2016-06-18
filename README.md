@@ -30,6 +30,6 @@ php test.php start
   ws.send('{"id":"John"}'); // 向服务器注册ID，将ID与当前connection绑定
   ws.send('{"id":"John","to":"xxx","message":"****"}'); // 发送普通消息示例
   ws.send('{"to":"xxx","message":"****"}'); // 与上一条等价
-  ws.send('{"message":"****"}''); // 群发消息
+  ws.send('{"message":"****"}'); // 群发消息
   ws.close(); // 关闭当前连接
 ```
